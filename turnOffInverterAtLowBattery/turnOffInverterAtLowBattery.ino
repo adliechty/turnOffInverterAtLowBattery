@@ -1,45 +1,74 @@
-const int kBUTTON = 3;
+////////////////////////
+// Pin Declarations
+////////////////////////
+const int kBUTTON = 5;
 const int kINV_STATUS = 4;
 const int kBAT_VOLTAGE = A3;
+
+////////////////////////
+// On off voltages
+////////////////////////
 const float kON_VOLTAGE = 12.6;
 const float kOFF_VOLTAGE = 12.3;
+
+///////////////////////////
+// Calibration constants
+///////////////////////////
+const float kREAD_ADC_VAL = 700; //0 to 1023, float due to averaging.
+const float kMEASURED_VOLTAGE = 13; //Measured voltage at time of kREAD_ADC_VAL
+const float kV_PER_CODE = kMEASURED_VOLTAGE / kREAD_ADC_VAL;
+
+////////////////////////
+// Globals
+////////////////////////
 bool inverterOn;
 void setup() {
+  Serial.begin(9600); // open the serial port at 9600 bps:
   // put your setup code here, to run once:
-  pinMode(kBUTTON, OUTPUT);
+  //kButton is pulled up by inverter to 5V therefore we can just use kBUTTON as open drain output.  Set floating at first
+  openButton();
   pinMode(kINV_STATUS, INPUT);
-  inverterOn = digitalRead(kINV_STATUS) == HIGH;
+  inverterOn = isInverterOn();
 }
-
-void turnOnInverter(bool lookAtStatus) {
-  inverterOn = digitalRead(kINV_STATUS) == HIGH;
-  // Always try to change if lookAtStatus is false
-  while (inverterOn == false || lookAtStatus == false) {
-      digitalWrite(kBUTTON, HIGH);
-      delay(1000);
-      digitalWrite(kBUTTON, LOW);
-      delay(1000);
-      if (lookAtStatus == false) { return; }
+void shortButton()
+{ 
+  pinMode(kBUTTON, OUTPUT);
+  digitalWrite(kBUTTON, LOW); 
+}
+void openButton()
+{
+    pinMode(kBUTTON, INPUT);
+}
+void pushReleaseButton()
+{
+    shortButton();
+    delay(1000);
+    openButton();
+    delay(1000);
+}
+bool isInverterOn()
+{
+  digitalRead(kINV_STATUS) == LOW;
+}
+void turnOnInverter() {
+  //While inverter is off, try to turn it on
+  while (isInverterOn() == false) {
+      pushReleaseButton();
+      //Allow up to 11 seconds for it to turn on before trying again
       for (int i = 0; i++; i<10) {
           delay(1000);
-          inverterOn = digitalRead(kINV_STATUS);
-          if (inverterOn = HIGH) {break;}
+          if (isInverterOn() == true) {break;}
       }
   }
 }
 
-void turnOffInverter(bool lookAtStatus) {
-  inverterOn = digitalRead(kINV_STATUS) == HIGH;
-  while (inverterOn == true || lookAtStatus == false) {
-      digitalWrite(kBUTTON, HIGH);
-      delay(1000);
-      digitalWrite(kBUTTON, LOW);
-      delay(1000);
-      if (lookAtStatus == false) { return; }
+void turnOffInverter() {
+  while (isInverterOn() == true) {
+      pushReleaseButton();
+      //Allow up to 11 seconds for it to turn off before trying again
       for (int i = 0; i++; i<10) {
           delay(1000);
-          inverterOn = digitalRead(kINV_STATUS);
-          if (inverterOn = HIGH) {break;}
+          if (isInverterOn() == false) {break;}
       }
   }
 }
@@ -54,21 +83,35 @@ float getBatteryVoltage() {
     value = value + float(analogRead(kBAT_VOLTAGE));
     delay(1);
   }
-
+  value = value / numReadings;
+  Serial.print("ADC averaged over 10 sec:");
+  Serial.print(value);
+  Serial.println("");
   // Take an average of all the readings.
-  return = value / numReadings;
+  return  value / numReadings;
  
 }
 
 void loop() {
-  // put your main code here, to run repeatedly:
 
   float batteryVoltage = getBatteryVoltage();
-  
-  if (inverterOn) {
-      if (getBatteryVoltage() <= kOFF_VOLTAGE) {turnOffInverter(true);}
+  Serial.print("Battery Voltage:");
+  Serial.print(batteryVoltage);
+  Serial.println("");
+  Serial.print("Inverter is ");
+  if (isInverterOn()){
+    Serial.println("ON");
   } else {
-      if (getBatteryVoltage() >= kON_VOLTAGE) {turnOffInverter(true);} 
+    Serial.println("OFF");
   }
+  /*if (inverterOn) {
+      Seria.println("Inverter is On");
+      if (getBatteryVoltage() <= kOFF_VOLTAGE) {turnOffInverter();}
+      inverterOn = false;
+  } else {
+      Seria.println("Inverter is Off");
+      if (getBatteryVoltage() >= kON_VOLTAGE) {turnOnInverter();} 
+      inverterOn = true;
+  }*/
   
 }
