@@ -1,7 +1,7 @@
 ////////////////////////
 // Pin Declarations
 ////////////////////////
-const int kBUTTON = 5;
+const int kBUTTON = 9;
 const int kINV_STATUS = 4;
 const int kBAT_VOLTAGE = A3;
 
@@ -14,8 +14,8 @@ const float kOFF_VOLTAGE = 12.3;
 ///////////////////////////
 // Calibration constants
 ///////////////////////////
-const float kREAD_ADC_VAL = 700; //0 to 1023, float due to averaging.
-const float kMEASURED_VOLTAGE = 13; //Measured voltage at time of kREAD_ADC_VAL
+const float kREAD_ADC_VAL = 993.64; //0 to 1023, float due to averaging.
+const float kMEASURED_VOLTAGE = 14.52; //Measured voltage at time of kREAD_ADC_VAL
 const float kV_PER_CODE = kMEASURED_VOLTAGE / kREAD_ADC_VAL;
 
 ////////////////////////
@@ -32,23 +32,26 @@ void setup() {
 }
 void shortButton()
 { 
+  Serial.println("Short button");
   pinMode(kBUTTON, OUTPUT);
   digitalWrite(kBUTTON, LOW); 
 }
 void openButton()
 {
+    Serial.println("Open button");
     pinMode(kBUTTON, INPUT);
 }
 void pushReleaseButton()
 {
+    
     shortButton();
-    delay(1000);
+    delay(2000);
     openButton();
-    delay(1000);
+    delay(2000);
 }
 bool isInverterOn()
 {
-  digitalRead(kINV_STATUS) == LOW;
+  return digitalRead(kINV_STATUS) == LOW;
 }
 void turnOnInverter() {
   //While inverter is off, try to turn it on
@@ -87,8 +90,10 @@ float getBatteryVoltage() {
   Serial.print("ADC averaged over 10 sec:");
   Serial.print(value);
   Serial.println("");
-  // Take an average of all the readings.
-  return  value / numReadings;
+  // Convert adc averaged reading to Volts.
+  // kV_PER_CODE aquired by measuring battery voltage and ADC code.
+  // divide Voltage by ADC code read for this constant.
+  return  value * kV_PER_CODE;
  
 }
 
@@ -104,14 +109,14 @@ void loop() {
   } else {
     Serial.println("OFF");
   }
-  /*if (inverterOn) {
-      Seria.println("Inverter is On");
-      if (getBatteryVoltage() <= kOFF_VOLTAGE) {turnOffInverter();}
-      inverterOn = false;
-  } else {
-      Seria.println("Inverter is Off");
-      if (getBatteryVoltage() >= kON_VOLTAGE) {turnOnInverter();} 
-      inverterOn = true;
-  }*/
+  //if (isInverterOn()) {
+  //    Seria.println("Inverter is On");
+      if (batteryVoltage <= kOFF_VOLTAGE) {turnOffInverter();}
+  //    inverterOn = false;
+  //} else {
+  //    Seria.println("Inverter is Off");
+      if (batteryVoltage >= kON_VOLTAGE) {turnOnInverter();} 
+  //    inverterOn = true;
+  //}
   
 }
