@@ -8,7 +8,12 @@ const int kBAT_VOLTAGE = A3;
 ////////////////////////
 // On off voltages
 ////////////////////////
-const float kON_VOLTAGE = 12.6;
+//14.4V:  Boost voltage
+//13.8V:  Float Voltage
+//13.2V:  Boost return Voltage
+//12V:    Undervoltage warning
+//Set it just under float voltage...Probably makes sense to just set it to flaot voltage directly as the boost voltage is 14.4V, it should always hit 13.8V even after inacuracy of the measurement.
+const float kON_VOLTAGE = 13.6;
 const float kOFF_VOLTAGE = 12.3;
 
 ///////////////////////////
